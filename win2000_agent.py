@@ -1,6 +1,5 @@
 # -*- coding: gbk -*-
 import os, sys, json, re
-import os, sys, json, re
 PY3 = sys.version_info[0] >= 3
 if PY3:
     from urllib.request import Request, urlopen
@@ -9,11 +8,26 @@ else:
     from urllib2 import Request, urlopen
     from urllib import quote
 
-KEY = os.environ.get("OPENAI_API_KEY", "")
-URL = os.environ.get("OPENAI_BASE_URL", "").rstrip("/")
-MODEL = os.environ.get("MODEL", "glm-4-flash")
+BACKENDS = {
+    "zhipu":       ("https://open.bigmodel.cn/api/paas/v4", "glm-4-flash"),
+    "deepseek":    ("https://api.deepseek.com/v1",          "deepseek-chat"),
+    "siliconflow": ("https://api.siliconflow.cn/v1",        "Qwen/Qwen2.5-7B-Instruct"),
+    "moonshot":    ("https://api.moonshot.cn/v1",           "moonshot-v1-8k"),
+    "openai":      ("https://api.openai.com/v1",            "gpt-4o-mini"),
+}
 
-UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+BACKEND = os.environ.get("BACKEND", "zhipu")
+KEY = os.environ.get("OPENAI_API_KEY", "")
+
+if BACKEND in BACKENDS:
+    default_url, default_model = BACKENDS[BACKEND]
+else:
+    default_url, default_model = "", ""
+
+URL = os.environ.get("OPENAI_BASE_URL", default_url).rstrip("/")
+MODEL = os.environ.get("MODEL", default_model)
+
+UA = "Mozilla/5.0 (Windows NT 5.1) Chrome/120.0"
 
 def post(path, body):
     data = json.dumps(body).encode("utf-8")
@@ -51,7 +65,10 @@ def search(q):
         return ""
 
 def main(g):
-    print("[2000] goal: " + g)
+    print("[2000] backend: " + BACKEND)
+    print("[2000] model:   " + MODEL)
+    print("[2000] url:     " + URL)
+    print("[2000] goal:    " + g)
     print("[2000] searching...")
     s = search(g)
     print("[2000] got " + str(len(s)) + " chars")
@@ -59,24 +76,19 @@ def main(g):
         print(s[:300])
     print("[2000] generating report...")
     if s:
-        prompt = (
-            "用中文写一份关于《" + g + "》的 Markdown 研究报告。\n"
-            "严格要求：\n"
-            "1. 只基于下面提供的资料，不要编造资料以外的任何事实、数据、文献。\n"
-            "2. 不要编造参考文献、作者、期刊名。\n"
-            "3. 末尾列出资料中出现的 URL。\n"
-            "4. 用中文输出。\n\n"
-            "资料：\n" + s
-        )
+        prompt = ("用中文写一份关于《" + g + "》的 Markdown 研究报告。\n"
+                  "严格要求：\n"
+                  "1. 只基于下面提供的资料，不要编造资料以外的任何事实、数据、文献。\n"
+                  "2. 不要编造参考文献、作者、期刊名。\n"
+                  "3. 末尾列出资料中出现的 URL。\n"
+                  "4. 用中文输出。\n\n资料：\n" + s)
     else:
-        prompt = (
-            "用中文写一份关于《" + g + "》的 Markdown 研究报告。\n"
-            "严格要求：\n"
-            "1. 只写你确定知道的事实。不确定的，直接说\"我不确定\"。\n"
-            "2. 绝对不要编造参考文献、作者、期刊名。\n"
-            "3. 报告末尾不要列 References，除非你确定文献真实存在。\n"
-            "4. 用中文输出。"
-        )
+        prompt = ("用中文写一份关于《" + g + "》的 Markdown 研究报告。\n"
+                  "严格要求：\n"
+                  "1. 只写你确定知道的事实。不确定的，直接说\"我不确定\"。\n"
+                  "2. 绝对不要编造参考文献、作者、期刊名。\n"
+                  "3. 报告末尾不要列 References，除非你确定文献真实存在。\n"
+                  "4. 用中文输出。")
     r = post("/chat/completions", {
         "model": MODEL,
         "messages": [{"role": "user", "content": prompt}],
