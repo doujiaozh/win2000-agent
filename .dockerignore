@@ -1,0 +1,4 @@
+run.bat
+.git
+*.bat
+__pycache__

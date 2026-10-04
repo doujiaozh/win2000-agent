@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  agent:
+    build: .
+    environment:
+      - BACKEND=${BACKEND:-zhipu}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: ["固态电池最新进展"]
