@@ -30,3 +30,16 @@ That is the final boss.
 ## License
 
 MIT
+
+## TLS 1.2 on real Windows 2000
+
+Win2000's Python 2.7.8 ships OpenSSL 0.9.8, which only supports TLS 1.0.
+Modern LLM APIs require TLS 1.2.
+
+Solution: use **stunnel 4.56** as a local TLS 1.2 proxy.
+
+See [docs/TLS12.md](docs/TLS12.md) for the full guide.
+
+Status:
+- Verified on Win7 (Python 2.7.18 + OpenSSL 1.0.2t): TLS 1.2 OK
+- Not yet verified on real Win2000 (see issue #1)
